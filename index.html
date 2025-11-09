@@ -1396,7 +1396,7 @@
             initViewToggle();
             // تعيين الفئة الافتراضية “الفطور الصباحي” كنشطة إن وجدت
             document.querySelectorAll('#section-nav-list .nav-link').forEach(l => l.classList.remove('active'));
-            const DEFAULT_SECTION_TITLE = 'الفطور الصباحي';
+            const DEFAULT_SECTION_TITLE = 'القهوة';
             const defaultSection = menuData.find(s => s.title === DEFAULT_SECTION_TITLE);
             if (defaultSection) {
                 const defLink = document.querySelector(`.nav-link[data-section-id="${defaultSection.id}"]`);

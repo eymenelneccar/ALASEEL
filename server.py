@@ -72,6 +72,7 @@ class Handler(SimpleHTTPRequestHandler):
                 except Exception:
                     entries = []
 
+                submission_id = str(rec.get('submissionId') or '').strip()
                 entry = {
                     'type': 'service',
                     'serviceRating': service_rating,
@@ -79,7 +80,7 @@ class Handler(SimpleHTTPRequestHandler):
                     'customerName': customer_name,
                     'customerPhone': customer_phone,
                     'timestamp': timestamp,
-                    'submissionId': str(rec.get('submissionId') or '').strip()
+                    'submissionId': submission_id
                 }
                 # أضف معلومات الصنف (اختيارية)
                 if item_name or item_id:
@@ -89,14 +90,22 @@ class Handler(SimpleHTTPRequestHandler):
                         'category': category,
                         'rating': rating
                     })
-                entries.append(entry)
-                with open(REVIEWS_PATH, 'w', encoding='utf-8') as f:
-                    json.dump(entries, f, ensure_ascii=False, indent=2)
+                # منع التكرار بناءً على submissionId
+                duplicate = False
+                if submission_id:
+                    for e in entries:
+                        if str(e.get('submissionId') or '').strip() == submission_id:
+                            duplicate = True
+                            break
+                if not duplicate:
+                    entries.append(entry)
+                    with open(REVIEWS_PATH, 'w', encoding='utf-8') as f:
+                        json.dump(entries, f, ensure_ascii=False, indent=2)
 
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json; charset=utf-8')
                 self.end_headers()
-                self.wfile.write(json.dumps({'ok': True, 'path': 'assets/reviews.json'}).encode('utf-8'))
+                self.wfile.write(json.dumps({'ok': True, 'path': 'assets/reviews.json', 'duplicate': duplicate}).encode('utf-8'))
             except Exception as e:
                 self.send_response(400)
                 self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -284,13 +293,57 @@ class Handler(SimpleHTTPRequestHandler):
                     raise ValueError('Missing url')
                 if data is None:
                     raise ValueError('Missing data')
+                # تحقّق منع التكرار عبر submissionId عند التوجيه
+                submission_id = str((data or {}).get('submissionId') or '').strip()
+                forwarded_duplicate = False
+                # حاول قراءة المراجعات لتعليم «مُوجّه»
+                entries = []
+                try:
+                    if os.path.exists(REVIEWS_PATH):
+                        with open(REVIEWS_PATH, 'r', encoding='utf-8') as f:
+                            entries = json.load(f)
+                            if not isinstance(entries, list):
+                                entries = []
+                except Exception:
+                    entries = []
+
+                idx_to_update = None
+                if submission_id and entries:
+                    for i, e in enumerate(entries):
+                        if str(e.get('submissionId') or '').strip() == submission_id:
+                            idx_to_update = i
+                            if e.get('forwarded'):
+                                forwarded_duplicate = True
+                            break
+
+                if forwarded_duplicate:
+                    # تم التوجيه سابقًا؛ لا تُكرر الطلب
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json; charset=utf-8')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'ok': True, 'status': 200, 'duplicate': True, 'alreadyForwarded': True}).encode('utf-8'))
+                    return
+
+                # نفّذ الطلب الخارجي
                 req = urllib.request.Request(url=url, data=json.dumps(data).encode('utf-8'), headers={'Content-Type': 'application/json'}, method='POST')
                 with urllib.request.urlopen(req, timeout=10) as resp:
                     status = resp.getcode()
+
+                # علّم التقديم كموجّه عند النجاح
+                if status == 200 and idx_to_update is not None:
+                    try:
+                        entries[idx_to_update]['forwarded'] = True
+                        entries[idx_to_update]['forwardedAt'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                        entries[idx_to_update]['forwardStatus'] = status
+                        with open(REVIEWS_PATH, 'w', encoding='utf-8') as f:
+                            json.dump(entries, f, ensure_ascii=False, indent=2)
+                    except Exception:
+                        pass
+
                 self.send_response(200 if status == 200 else status)
                 self.send_header('Content-Type', 'application/json; charset=utf-8')
                 self.end_headers()
-                self.wfile.write(json.dumps({'ok': True, 'status': status}).encode('utf-8'))
+                self.wfile.write(json.dumps({'ok': True, 'status': status, 'duplicate': False}).encode('utf-8'))
             except Exception as e:
                 self.send_response(400)
                 self.send_header('Content-Type', 'application/json; charset=utf-8')

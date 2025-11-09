@@ -30,5 +30,38 @@
     "customerName": "???",
     "customerPhone": "07701234567",
     "timestamp": "2025-11-09T10:10:00Z"
+  },
+  {
+    "type": "service",
+    "serviceRating": 4,
+    "comment": "?????? ??? ???????-1",
+    "customerName": "???",
+    "customerPhone": "07701234567",
+    "timestamp": "2025-11-09T10:20:00Z",
+    "submissionId": "dup-test-002"
+  },
+  {
+    "type": "service",
+    "serviceRating": 3,
+    "comment": "لاتةة",
+    "customerName": "يبلا",
+    "customerPhone": "572453453",
+    "timestamp": "2025-11-09T07:58:04.037Z",
+    "submissionId": "617d0f19-801e-4d6b-a3da-7fc13c2f194d",
+    "forwarded": true,
+    "forwardedAt": "2025-11-09T07:58:06Z",
+    "forwardStatus": 200
+  },
+  {
+    "type": "service",
+    "serviceRating": 5,
+    "comment": "?????? ?????-?????",
+    "customerName": "????",
+    "customerPhone": "07701234568",
+    "timestamp": "2025-11-09T10:22:00Z",
+    "submissionId": "forward-test-003",
+    "forwarded": true,
+    "forwardedAt": "2025-11-09T07:58:41Z",
+    "forwardStatus": 200
   }
 ]
