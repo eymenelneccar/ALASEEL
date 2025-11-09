@@ -1,5 +1,7 @@
 import os
 import json
+import io
+import zipfile
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 import base64
 import re
@@ -354,6 +356,44 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.end_headers()
             self.wfile.write(json.dumps({'ok': False, 'error': 'Not Found'}).encode('utf-8'))
+
+    def do_GET(self):
+        # تنزيل مجلد الأصول كملف ZIP عبر المسار /download/assets
+        if self.path.startswith('/download/assets'):
+            assets_dir = os.path.join(ROOT_DIR, 'assets')
+            if not os.path.isdir(assets_dir):
+                self.send_response(404)
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(json.dumps({'ok': False, 'error': 'assets directory not found', 'path': 'assets/'}).encode('utf-8'))
+                return
+
+            try:
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
+                    for root, _, files in os.walk(assets_dir):
+                        for f in files:
+                            abs_path = os.path.join(root, f)
+                            rel = os.path.relpath(abs_path, ROOT_DIR)
+                            arc = rel.replace('\\', '/')  # استخدم / داخل الأرشيف
+                            zf.write(abs_path, arc)
+                data = buf.getvalue()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/zip')
+                self.send_header('Content-Disposition', 'attachment; filename="assets.zip"')
+                self.send_header('Content-Length', str(len(data)))
+                self.send_header('Cache-Control', 'no-store')
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(json.dumps({'ok': False, 'error': str(e)}).encode('utf-8'))
+            return
+
+        # لباقي المسارات، استخدم تقديم الملفات العادي
+        return super().do_GET()
 
 
 def main():
