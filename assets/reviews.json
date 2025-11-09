@@ -1,0 +1,34 @@
+[
+  {
+    "type": "service",
+    "serviceRating": 5,
+    "comment": "?????? ?????",
+    "customerName": "????",
+    "customerPhone": "07701234567",
+    "timestamp": "2025-11-07T10:00:00Z"
+  },
+  {
+    "type": "service",
+    "serviceRating": 3,
+    "comment": "SDFSDFSDF",
+    "customerName": "HSLK",
+    "customerPhone": "21002020",
+    "timestamp": "2025-11-09T07:52:57.814Z"
+  },
+  {
+    "type": "service",
+    "serviceRating": 3,
+    "comment": "SDFSDFSDF",
+    "customerName": "SDFDS",
+    "customerPhone": "42525272",
+    "timestamp": "2025-11-09T07:53:18.808Z"
+  },
+  {
+    "type": "service",
+    "serviceRating": 4,
+    "comment": "?????? ??? ???????",
+    "customerName": "???",
+    "customerPhone": "07701234567",
+    "timestamp": "2025-11-09T10:10:00Z"
+  }
+]
